@@ -9,6 +9,7 @@ use DateTimeInterface;
 use LiquidLight\Anthology\Domain\Model\Category;
 use LiquidLight\Anthology\Domain\Model\Content;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Attribute\ORM\Lazy;
 use TYPO3\CMS\Extbase\Domain\Model\FileReference;
 use TYPO3\CMS\Extbase\Persistence\ObjectStorage;
 
@@ -31,6 +32,7 @@ trait AnthologyModelTrait
 	/**
 	 * @var ObjectStorage<Content>
 	 */
+	#[Lazy]
 	protected ?ObjectStorage $content = null;
 
 	protected ?string $relatedPages = null;
@@ -38,6 +40,7 @@ trait AnthologyModelTrait
 	/**
 	 * @var ObjectStorage<FileReference>
 	 */
+	#[Lazy]
 	protected ?ObjectStorage $files = null;
 
 	protected ?string $link = null;
@@ -49,6 +52,7 @@ trait AnthologyModelTrait
 	/**
 	 * @var ObjectStorage<Category>
 	 */
+	#[Lazy]
 	protected ?ObjectStorage $categories = null;
 
 	public function getTitle(): ?string
