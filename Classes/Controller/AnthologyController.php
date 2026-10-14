@@ -211,9 +211,9 @@ class AnthologyController extends ActionController
 		$partialRootPaths = array_merge($partialRootPaths, $this->settings['view']['partialRootPaths'] ?? []);
 
 		// Compile model specific paths configured in Typoscript
-		$layoutRootPaths = array_merge($layoutRootPaths, $this->settings['view']['layoutRootPaths'][strtolower($modelName)] ?? []);
-		$templateRootPaths = array_merge($templateRootPaths, $this->settings['view']['templateRootPaths'][strtolower($modelName)] ?? []);
-		$partialRootPaths = array_merge($partialRootPaths, $this->settings['view']['partialRootPaths'][strtolower($modelName)] ?? []);
+		$layoutRootPaths = array_merge($layoutRootPaths, $this->settings['view'][strtolower($modelName)]['layoutRootPaths'] ?? []);
+		$templateRootPaths = array_merge($templateRootPaths, $this->settings['view'][strtolower($modelName)]['templateRootPaths'] ?? []);
+		$partialRootPaths = array_merge($partialRootPaths, $this->settings['view'][strtolower($modelName)]['partialRootPaths'] ?? []);
 
 		// Set compiled paths
 		$templatePaths->setLayoutRootPaths($layoutRootPaths);
