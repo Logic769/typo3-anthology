@@ -1,3 +1,19 @@
+# 3.2.0
+
+**14th October 2026**
+
+#### Feature
+
+- Add filter type & display to class list for targeted styling (#69)
+- Hide filters container in template when none are specified (#74)
+- Allow filters to be collapsed & expanded (#76)
+- Allow filters to be reordered via UI (#76)
+
+#### Fix
+
+- Fix broken model specific template path resolution (#79)
+- Defer loading of ObjectStorage models in AnthologyModelTrait (#82)
+
 # 3.1.0
 
 **9th September 2026**
