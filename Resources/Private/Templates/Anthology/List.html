@@ -11,9 +11,11 @@
 			</div>
 		</f:if>
 
-		<div class="filters">
-			<f:render partial="List/Filters" arguments="{filters: filters, configuration: configuration}" />
-		</div>
+		<f:if condition="{filters}">
+			<div class="filters">
+				<f:render partial="List/Filters" arguments="{filters: filters, configuration: configuration}" />
+			</div>
+		</f:if>
 
 		<div class="records">
 			<f:for each="{paginator.paginatedItems}" as="record">
