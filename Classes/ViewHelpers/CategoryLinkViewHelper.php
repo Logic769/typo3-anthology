@@ -1,0 +1,197 @@
+<?php
+
+declare(strict_types=1);
+
+namespace LiquidLight\Anthology\ViewHelpers;
+
+use LiquidLight\Anthology\Domain\Filter\CategoryFilter;
+use LiquidLight\Anthology\Domain\Model\Category;
+use LiquidLight\Anthology\Domain\Model\Filter;
+use LiquidLight\Anthology\Domain\Repository\FilterRepository;
+use LiquidLight\Anthology\Factory\FilterFactory;
+use Override;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Extbase\Mvc\ExtbaseRequestParameters;
+use TYPO3\CMS\Extbase\Mvc\Request;
+use TYPO3\CMS\Extbase\Mvc\RequestInterface;
+use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
+use TYPO3\CMS\Extbase\Service\ExtensionService;
+use TYPO3\CMS\Fluid\Core\Rendering\RenderingContext;
+use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper;
+
+final class CategoryLinkViewHelper extends AbstractTagBasedViewHelper
+{
+	protected $tagName = 'a';
+
+	public function __construct(
+		private FilterRepository $filterRepository,
+		private FilterFactory $filterFactory,
+		private ExtensionService $extensionService,
+		private UriBuilder $uriBuilder,
+	) {
+		parent::__construct();
+	}
+
+	#[Override]
+	public function initializeArguments(): void
+	{
+		parent::initializeArguments();
+
+		$this
+			->registerArgument(
+				'listPage',
+				'int',
+				'The list page UID for the current model',
+			)
+			->registerArgument(
+				'category',
+				Category::class,
+				'The category to be selected',
+				true,
+			)
+		;
+	}
+
+	#[Override]
+	public function render(): string
+	{
+		if (!($this->arguments['category'] ?? null) instanceof Category) {
+			return (string)$this->renderChildren();
+		}
+
+		$category = $this->arguments['category'];
+		$listPageUid = $this->getListPageUid();
+
+		$categoryFilter = $this->getCategoryFilter(
+			$category,
+			$listPageUid
+		);
+
+		if (!$categoryFilter) {
+			return (string)$this->renderChildren();
+		}
+
+		$filterUrl = $this->buildFilterUrl(
+			$categoryFilter,
+			$category,
+			$listPageUid,
+		);
+
+		if (!$filterUrl) {
+			return (string)$this->renderChildren();
+		}
+
+		$this->tag->addAttribute('href', $filterUrl);
+		$this->tag->setContent((string)$this->renderChildren());
+
+		return $this->tag->render();
+	}
+
+	private function getListPageUid(): int
+	{
+		$listPageUid = (int)($this->arguments['listPage'] ?? 0);
+
+		return $listPageUid > 0
+			? $listPageUid
+			: (
+				$this
+				->getExtbaseRequest()
+				?->getAttribute('routing')
+				?->getPageId() ?? 0
+			);
+	}
+
+	private function getCategoryFilter(Category $category, int $listPageUid): ?Filter
+	{
+		$query = $this->filterRepository->createQuery();
+		$query->getQuerySettings()->setRespectStoragePage(false);
+		$query->matching(
+			$query->logicalAnd(
+				$query->equals('pid', $listPageUid),
+				$query->equals('filterType', $this->getFilterIdentifier()),
+			),
+		);
+
+		/** @var Filter[] */
+		$listPageFilters = $query->execute()->toArray();
+
+		$matchingFilters = array_filter(
+			$listPageFilters,
+			static fn (Filter $filter): bool => (
+				(int)($filter->getParsedSettings()['category'] ?? 0) === $category->getParent()?->getUid()
+			),
+		);
+
+		if (count($matchingFilters) === 0) {
+			return null;
+		}
+
+		return reset($matchingFilters);
+	}
+
+	private function buildFilterUrl(
+		Filter $categoryFilter,
+		Category $category,
+		int $listPageUid
+	): ?string {
+		$request = $this->getExtbaseRequest();
+
+		if (!$request) {
+			return null;
+		}
+
+		/** @var ExtbaseRequestParameters $extbase */
+		$extbase = $request->getAttribute('extbase');
+
+		$pluginNamespace = $this->extensionService->getPluginNamespace(
+			$extbase->getControllerExtensionName(),
+			$extbase->getPluginName(),
+		);
+
+		return $this->uriBuilder
+			->reset()
+			->setRequest($request)
+			->setTargetPageUid($listPageUid)
+			->setArguments([
+				$pluginNamespace => [
+					'page' => 0,
+					'filter' => [
+						(int)$categoryFilter->getUid() => (int)$category->getUid(),
+					],
+				],
+			])
+			->buildFrontendUri()
+		;
+	}
+
+	private function getExtbaseRequest(): ?RequestInterface
+	{
+		if (!$this->renderingContext instanceof RenderingContext) {
+			return null;
+		}
+
+		$request = $this->renderingContext->hasAttribute(ServerRequestInterface::class)
+			? $this->renderingContext->getAttribute(ServerRequestInterface::class)
+			: null;
+
+		if (
+			!$request instanceof ServerRequestInterface
+			|| !$request->getAttribute('extbase') instanceof ExtbaseRequestParameters
+		) {
+			return null;
+		}
+
+		return $request instanceof RequestInterface
+			? $request
+			: new Request($request);
+	}
+
+	private function getFilterIdentifier(): ?string
+	{
+		return array_search(
+			CategoryFilter::class,
+			$this->filterFactory->getFilters(),
+			true
+		) ?: null;
+	}
+}
