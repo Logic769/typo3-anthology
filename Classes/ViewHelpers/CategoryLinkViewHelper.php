@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace LiquidLight\Anthology\ViewHelpers;
 
-use LiquidLight\Anthology\Domain\Filter\CategoryFilter;
 use LiquidLight\Anthology\Domain\Model\Category;
 use LiquidLight\Anthology\Domain\Model\Filter;
 use LiquidLight\Anthology\Domain\Repository\FilterRepository;
-use LiquidLight\Anthology\Factory\FilterFactory;
 use Override;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Extbase\Mvc\ExtbaseRequestParameters;
@@ -25,7 +23,6 @@ final class CategoryLinkViewHelper extends AbstractTagBasedViewHelper
 
 	public function __construct(
 		private FilterRepository $filterRepository,
-		private FilterFactory $filterFactory,
 		private ExtensionService $extensionService,
 		private UriBuilder $uriBuilder,
 	) {
@@ -62,10 +59,13 @@ final class CategoryLinkViewHelper extends AbstractTagBasedViewHelper
 		$category = $this->arguments['category'];
 		$listPageUid = $this->getListPageUid();
 
-		$categoryFilter = $this->getCategoryFilter(
-			$category,
-			$listPageUid
-		);
+		$categoryFilter = $this
+			->filterRepository
+			->findCategoryFilterByPage(
+				$category,
+				$listPageUid
+			)
+		;
 
 		if (!$categoryFilter) {
 			return (string)$this->renderChildren();
@@ -99,34 +99,6 @@ final class CategoryLinkViewHelper extends AbstractTagBasedViewHelper
 				?->getAttribute('routing')
 				?->getPageId() ?? 0
 			);
-	}
-
-	private function getCategoryFilter(Category $category, int $listPageUid): ?Filter
-	{
-		$query = $this->filterRepository->createQuery();
-		$query->getQuerySettings()->setRespectStoragePage(false);
-		$query->matching(
-			$query->logicalAnd(
-				$query->equals('pid', $listPageUid),
-				$query->equals('filterType', $this->getFilterIdentifier()),
-			),
-		);
-
-		/** @var Filter[] */
-		$listPageFilters = $query->execute()->toArray();
-
-		$matchingFilters = array_filter(
-			$listPageFilters,
-			static fn (Filter $filter): bool => (
-				(int)($filter->getParsedSettings()['category'] ?? 0) === $category->getParent()?->getUid()
-			),
-		);
-
-		if (count($matchingFilters) === 0) {
-			return null;
-		}
-
-		return reset($matchingFilters);
 	}
 
 	private function buildFilterUrl(
@@ -184,14 +156,5 @@ final class CategoryLinkViewHelper extends AbstractTagBasedViewHelper
 		return $request instanceof RequestInterface
 			? $request
 			: new Request($request);
-	}
-
-	private function getFilterIdentifier(): ?string
-	{
-		return array_search(
-			CategoryFilter::class,
-			$this->filterFactory->getFilters(),
-			true
-		) ?: null;
 	}
 }
