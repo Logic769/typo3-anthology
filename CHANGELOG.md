@@ -1,3 +1,11 @@
+# 3.3.0
+
+**15th October 2026**
+
+#### Feature
+
+- Add CategoryLinkViewHelper and documentation (#87)
+
 # 3.2.0
 
 **14th October 2026**
