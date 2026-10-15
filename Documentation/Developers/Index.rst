@@ -14,6 +14,7 @@ This section contains comprehensive guides for using the Anthology extension, co
 	Routing
 	Sitemap
 	Templates
+	ViewHelpers
 	CustomFilters
 	LinkHandler
 	ExternalRepositories

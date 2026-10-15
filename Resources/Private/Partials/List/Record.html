@@ -1,5 +1,6 @@
 <html
 	xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+	xmlns:a="http://typo3.org/ns/LiquidLight/Anthology/ViewHelpers"
 	data-namespace-typo3-fluid="true"
 >
 	<div class="record">
@@ -14,7 +15,11 @@
 		<f:if condition="{record.categories}">
 			<ul>
 				<f:for each="{record.categories}" as="category">
-					<li>{category.title}</li>
+					<li>
+						<a:categoryLink category="{category}">
+							{category.title}
+						</a:categoryLink>
+					</li>
 				</f:for>
 			</ul>
 		</f:if>
