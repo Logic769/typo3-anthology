@@ -7,12 +7,12 @@ namespace LiquidLight\Anthology\ViewHelpers;
 use LiquidLight\Anthology\Domain\Model\Category;
 use LiquidLight\Anthology\Domain\Model\Filter;
 use LiquidLight\Anthology\Domain\Repository\FilterRepository;
+use LiquidLight\Anthology\Routing\CategoryFilterUriBuilder;
 use Override;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Extbase\Mvc\ExtbaseRequestParameters;
 use TYPO3\CMS\Extbase\Mvc\Request;
 use TYPO3\CMS\Extbase\Mvc\RequestInterface;
-use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 use TYPO3\CMS\Extbase\Service\ExtensionService;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContext;
 use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper;
@@ -24,7 +24,7 @@ final class CategoryLinkViewHelper extends AbstractTagBasedViewHelper
 	public function __construct(
 		private FilterRepository $filterRepository,
 		private ExtensionService $extensionService,
-		private UriBuilder $uriBuilder,
+		private CategoryFilterUriBuilder $uriBuilder,
 	) {
 		parent::__construct();
 	}
@@ -112,27 +112,13 @@ final class CategoryLinkViewHelper extends AbstractTagBasedViewHelper
 			return null;
 		}
 
-		/** @var ExtbaseRequestParameters $extbase */
-		$extbase = $request->getAttribute('extbase');
-
-		$pluginNamespace = $this->extensionService->getPluginNamespace(
-			$extbase->getControllerExtensionName(),
-			$extbase->getPluginName(),
-		);
-
 		return $this->uriBuilder
-			->reset()
-			->setRequest($request)
-			->setTargetPageUid($listPageUid)
-			->setArguments([
-				$pluginNamespace => [
-					'page' => 0,
-					'filter' => [
-						(int)$categoryFilter->getUid() => (int)$category->getUid(),
-					],
-				],
-			])
-			->buildFrontendUri()
+			->buildCategoryFilterFrontendUri(
+				$listPageUid,
+				$categoryFilter,
+				$category,
+				$request
+			)
 		;
 	}
 
